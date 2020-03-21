@@ -1,0 +1,28 @@
+[(
+    name: "Junk Heap, Mk II",
+    class: Light,
+    role: "Transport",
+    segments: {
+        "Fuselage": 10,
+        "Port Wing": 5,
+        "Starboard Wing": 5,
+        "Cockpit": 1,
+    },
+    armor: 20,
+    mass: 100,
+),
+(
+    name: "Atlas",
+    class: Heavy,
+    role: "Cruiser",
+    segments: {
+        "Fuselage": 30,
+        "Port Wing": 15,
+        "Starboard Wing": 15,
+        "Top Wing": 10,
+        "Bottom Wing": 10,
+        "Cockpit": 6,
+    },
+    armor: 500,
+    mass: 1000,
+)]

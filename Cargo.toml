@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "privateer",
+    "privateer_custom_derive",
+]
