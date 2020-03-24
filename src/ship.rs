@@ -16,9 +16,44 @@ impl Ship {
         }
     }
 
+    pub fn add_component(
+        &mut self,
+        component: ComponentType,
+        location: &str,
+    ) -> Result<(), String> {
+        let next_id = self.components.len();
+        match self.segment(location) {
+            Some(segment) => {
+                if segment.used_slots + slots(&component) > segment.slots {
+                    return Err(format!(
+                        "The requested component does not fit in {}",
+                        location
+                    ));
+                }
+                segment.used_slots += slots(&component);
+                segment.component_ids.push(next_id);
+                self.components.push(component);
+            }
+            None => {
+                return Err(format!(
+                    "The requested location {} does not exist",
+                    location
+                ))
+            }
+        }
+        Ok(())
+    }
+
     pub fn hull(&self) -> &HullData {
         match &self.components[0] {
             ComponentType::Hull(d) => d,
+            _ => panic!("This ship has no hull!"),
+        }
+    }
+
+    pub fn segment(&mut self, name: &str) -> Option<&mut HullSegment> {
+        match &mut self.components[0] {
+            ComponentType::Hull(d) => d.segments.get_mut(name),
             _ => panic!("This ship has no hull!"),
         }
     }
@@ -32,8 +67,17 @@ impl fmt::Display for Ship {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} ({}, {:?} {})",
-            self.name, self.hull().name, self.hull().class, self.hull().role
-        )
+            "{} ({}, {:?} {})\n",
+            self.name,
+            self.hull().name,
+            self.hull().class,
+            self.hull().role
+        )?;
+        write!(f, "  Mass: {} kg\n", self.mass())?;
+        write!(f, "  Installed Components:\n")?;
+        for c in self.components.split_first().expect("ohno").1 {
+            write!(f, "    - {}\n", name(c))?;
+        }
+        Ok(())
     }
 }

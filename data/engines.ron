@@ -1,0 +1,12 @@
+[(
+    name: "Ion Engine, Mk I",
+    mass: 20,
+    slots: 10,
+    thrust: 15,
+),
+(
+    name: "Ion Engine, Mk II",
+    mass: 25,
+    slots: 15,
+    thrust: 30,
+)]
