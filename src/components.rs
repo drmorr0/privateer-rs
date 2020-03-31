@@ -83,7 +83,7 @@ pub fn name(ct: &ComponentType) -> &str {
         ComponentType::Computer(d) => &d.name,
         ComponentType::Engine(d) => &d.name,
         ComponentType::Weapon(d) => &d.name,
-    }  
+    }
 }
 
 pub fn mass(ct: &ComponentType) -> u32 {

@@ -4,14 +4,16 @@ use std::fmt;
 
 #[derive(Debug, Deserialize)]
 pub struct Ship {
+    id: usize,
     pub name: String,
     components: Vec<ComponentType>,
 }
 
 impl Ship {
-    pub fn new(name: String, hull_template: HullData) -> Ship {
+    pub fn new(name: String, id: usize, hull_template: HullData) -> Ship {
         Ship {
             name,
+            id,
             components: vec![ComponentType::Hull(hull_template)],
         }
     }
