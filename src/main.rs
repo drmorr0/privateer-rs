@@ -6,10 +6,11 @@ mod template;
 mod world;
 
 use std::error::Error;
+use crate::world::World;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut ctx = state_machine::Context::new();
-    ctx.run(Box::new(state_machine::EntryState {}))?;
+    let mut world = World::new();
+    state_machine::run(&mut world, Box::new(state_machine::EntryState {}))?;
     Ok(())
 
     // println!(
