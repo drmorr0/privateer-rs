@@ -1,5 +1,9 @@
 [(
-    name: "Junk Heap, Mk II",
+    common: (
+        name: "Junk Heap, Mk II",
+        mass: 100,
+        slots: 0,
+    ),
     class: Light,
     role: "Transport",
     segments: {
@@ -8,10 +12,13 @@
         "Starboard Wing": (armor: 10, slots: 5),
         "Cockpit": (armor: 5, slots: 1),
     },
-    mass: 100,
 ),
 (
-    name: "Atlas",
+    common: (
+        name: "Atlas",
+        mass: 1000,
+        slots: 0,
+    ),
     class: Heavy,
     role: "Cruiser",
     segments: {
@@ -22,5 +29,4 @@
         "Bottom Wing": (armor: 75, slots: 10),
         "Cockpit": (armor: 30, slots: 6),
     },
-    mass: 1000,
 )]

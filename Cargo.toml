@@ -7,6 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"]}
-ron = "0.5.1"
 anyhow = "1.0.13"
+component-derive = { path = "component-derive" }
+lazy_static = "1.4.0"
+ron = "0.5.1"
+serde = { version = "1.0", features = ["derive"]}
+erased-serde = "0.3.11"

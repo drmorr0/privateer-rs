@@ -1,0 +1,12 @@
+[package]
+name = "component-derive"
+version = "0.1.0"
+authors = ["David R. Morrison <drmorr@evokewonder.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "1.0.17"
+quote = "1.0.3"

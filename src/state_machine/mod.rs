@@ -1,4 +1,5 @@
 pub mod ship_builder;
+use crate::template::TemplateStore;
 use crate::world::World;
 use std::io::{self, Write};
 
@@ -31,7 +32,7 @@ impl State for EntryState {
         io::stdin()
             .read_line(&mut response)
             .expect("Error reading input");
-        let ship_id = world.mk_ship(response, world.template_store.hull_templates[0].clone());
+        let ship_id = world.mk_ship(response, TemplateStore::hulls()["Junk Heap, Mk II"].clone());
         ContextAction::Replace(Box::new(ship_builder::BuilderRootState { ship_id }))
     }
 }

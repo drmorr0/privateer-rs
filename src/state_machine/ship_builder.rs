@@ -20,7 +20,7 @@ impl State for BuilderRootState {
     fn handle_input(&self, _: &mut World) -> ContextAction {
         match input::get_response_choices(vec!["buy parts", "sell parts", "examine ship", "leave"])
         {
-            Ok(0) => ContextAction::Pushdown(Box::new(BuyState {
+            Ok(0) => ContextAction::Pushdown(Box::new(SelectComponentState {
                 ship_id: self.ship_id,
             })),
             Ok(1) => ContextAction::Pushdown(Box::new(SellState {
@@ -37,16 +37,24 @@ impl State for BuilderRootState {
     }
 }
 
-pub struct BuyState {
+pub struct SelectComponentState {
     pub ship_id: usize,
 }
 
-impl State for BuyState {
-    fn enter(&self, _: &World) -> anyhow::Result<()> {
-        unimplemented!()
+impl State for SelectComponentState {
+    fn enter(&self, world: &World) -> anyhow::Result<()> {
+        println!("Here's what we have for sale.");
+        Ok(())
     }
-    fn handle_input(&self, _: &mut World) -> ContextAction {
+    fn handle_input(&self, world: &mut World) -> ContextAction {
         unimplemented!()
+        /*let parts_list = match input::get_response_choices(vec!["Engines", "Weapons"]) {
+            Ok(0) => world.shops[0].engine_counts,
+            Ok(1) => world.shops[0].weapon_counts,
+        }
+        ContextAction::Pushdown(Box::new(AddComponentState {
+            ship_id: self.ship_id,
+        }))*/
     }
 }
 
