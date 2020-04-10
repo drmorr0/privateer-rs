@@ -2,7 +2,7 @@ use anyhow;
 use std::fmt;
 use std::io::{self, Write};
 
-pub fn get_response<T: ToString + Copy>(prompt: &str, choices: Vec<T>) -> anyhow::Result<T> {
+pub fn get_response<T: ToString + Copy>(prompt: &str, choices: &Vec<T>) -> anyhow::Result<T> {
     loop {
         let stringify = choices
             .iter()
@@ -29,7 +29,7 @@ pub fn get_response<T: ToString + Copy>(prompt: &str, choices: Vec<T>) -> anyhow
     }
 }
 
-pub fn get_response_choices<T: fmt::Display>(choices: Vec<T>) -> anyhow::Result<usize> {
+pub fn get_response_choices<T: fmt::Display>(choices: &Vec<T>) -> anyhow::Result<usize> {
     loop {
         let prompt = choices
             .iter()

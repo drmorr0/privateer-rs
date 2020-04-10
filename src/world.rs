@@ -1,8 +1,6 @@
 use crate::components::{Component, Hull};
 use crate::ship::Ship;
 use crate::template::TemplateStore;
-use std::collections::HashMap;
-use std::fmt;
 
 pub struct World {
     pub ships: Vec<Ship>,
@@ -25,37 +23,56 @@ impl<'wld> World {
         id
     }
 
-    pub fn mk_shop(&mut self, name: String) {
-        let mut engine_counts: HashMap<&str, u32> = HashMap::new();
-        let mut weapon_counts: HashMap<&str, u32> = HashMap::new();
-        for tmpl in TemplateStore::engines().values() {
-            engine_counts.insert(tmpl.name(), 7);
-        }
-        for tmpl in TemplateStore::weapons().values() {
-            weapon_counts.insert(tmpl.name(), 5);
-        }
+    fn mk_shop(&mut self, name: String) {
         self.shops.push(Shop {
             name,
-            engine_counts,
-            weapon_counts,
+            engine_counts: vec![5; TemplateStore::engine_count()],
+            weapon_counts: vec![5; TemplateStore::weapon_count()],
         });
     }
 }
 
 pub struct Shop {
     pub name: String,
-    pub engine_counts: HashMap<&'static str, u32>,
-    pub weapon_counts: HashMap<&'static str, u32>,
+    pub engine_counts: Vec<u32>,
+    pub weapon_counts: Vec<u32>,
 }
 
-impl fmt::Display for Shop {
+fn sort_components(
+    complist: &Vec<u32>,
+    comp_getter: fn(usize) -> &'static dyn Component,
+) -> Vec<(&'static dyn Component, u32)> {
+    let mut res: Vec<(&'static dyn Component, u32)> = complist
+        .iter()
+        .enumerate()
+        .filter_map(|(id, &count)| match count {
+            x if x > 0 => Some((comp_getter(id), x)),
+            _ => None,
+        })
+        .collect();
+    res.sort_by(|a, b| a.0.name().cmp(b.0.name()));
+    res
+}
+
+impl Shop {
+    pub fn available_engines(&self) -> Vec<(&'static dyn Component, u32)> {
+        sort_components(&self.engine_counts, TemplateStore::engine)
+    }
+
+    pub fn available_weapons(&self) -> Vec<(&'static dyn Component, u32)> {
+        sort_components(&self.weapon_counts, TemplateStore::weapon)
+    }
+}
+
+/*impl fmt::Display for Shop {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Engines:")?;
         writeln!(f, "--------")?;
 
-        for (i, (component_name, count)) in self.engine_counts.iter().enumerate() {
-            writeln!(f, "  [{}] {}: {}", i, component_name, count)?;
+        for (i, (id, count)) in self.engine_counts.iter().enumerate() {
+            let component = TemplateStore::engine(*id).unwrap();
+            writeln!(f, "  [{}] {}: {}", i, component.name(), count)?;
         }
         Ok(())
     }
-}
+}*/
