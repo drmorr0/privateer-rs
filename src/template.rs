@@ -1,13 +1,23 @@
-use crate::components::{Component, Engine, Hull, Weapon};
+use crate::components::{
+    Component,
+    Engine,
+    Hull,
+    Weapon,
+};
 use anyhow;
 use erased_serde;
 use lazy_static::lazy_static;
 use ron::de::Deserializer;
 use serde::Deserialize;
-use std::fs::File;
-use std::io::{BufReader, Read};
-use std::iter::Enumerate;
-use std::slice::Iter;
+use std::{
+    fs::File,
+    io::{
+        BufReader,
+        Read,
+    },
+    iter::Enumerate,
+    slice::Iter,
+};
 
 lazy_static! {
     static ref TEMPLATE_STORE: TemplateStore = TemplateStore::new();
@@ -63,15 +73,13 @@ impl TemplateStore {
     }
 }
 
-fn read_template_file<T: Component + for<'de> Deserialize<'de>>(
-    filename: String,
-) -> anyhow::Result<Vec<T>> {
+fn read_template_file<T: Component + for<'de> Deserialize<'de>>(filename: String) -> anyhow::Result<Vec<T>> {
     let f = match File::open(&filename) {
         Ok(f) => f,
         Err(e) => {
             println!("Could not open {}:\n  {}", &filename, e);
             panic!();
-        }
+        },
     };
     let mut reader = BufReader::new(f);
     let mut tmpl_str = String::new();
@@ -83,7 +91,7 @@ fn read_template_file<T: Component + for<'de> Deserialize<'de>>(
         Err(e) => {
             println!("Could not parse RON-file {}:\n  {}", &filename, e);
             panic!();
-        }
+        },
     };
     Ok(res)
 }

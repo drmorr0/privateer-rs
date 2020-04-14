@@ -6,12 +6,12 @@
     ),
     class: Light,
     role: "Transport",
-    segments: {
-        "Fuselage": (armor: 20, slots: 10),
-        "Port Wing": (armor: 10, slots: 5),
-        "Starboard Wing": (armor: 10, slots: 5),
-        "Cockpit": (armor: 5, slots: 1),
-    },
+    segment_list: [
+        (name: "Fuselage", armor: 20, slots: 10),
+        (name: "Port Wing", armor: 10, slots: 5),
+        (name: "Starboard Wing", armor: 10, slots: 5),
+        (name: "Cockpit", armor: 5, slots: 1),
+    ],
 ),
 (
     common: (
@@ -21,12 +21,12 @@
     ),
     class: Heavy,
     role: "Cruiser",
-    segments: {
-        "Fuselage": (armor: 500, slots: 30),
-        "Port Wing": (armor: 100, slots: 15),
-        "Starboard Wing": (armor: 100, slots: 15),
-        "Top Wing": (armor: 75, slots: 10),
-        "Bottom Wing": (armor: 75, slots: 10),
-        "Cockpit": (armor: 30, slots: 6),
-    },
+    segment_list: [
+        (name: "Fuselage", armor: 500, slots: 30),
+        (name: "Port Wing", armor: 100, slots: 15),
+        (name: "Starboard Wing", armor: 100, slots: 15),
+        (name: "Top Wing", armor: 75, slots: 10),
+        (name: "Bottom Wing", armor: 75, slots: 10),
+        (name: "Cockpit", armor: 30, slots: 6),
+    ],
 )]

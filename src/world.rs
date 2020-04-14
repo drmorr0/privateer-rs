@@ -1,6 +1,13 @@
-use crate::components::{Component, Hull};
-use crate::ship::Ship;
-use crate::template::TemplateStore;
+use crate::{
+    components::{
+        Component,
+        ComponentType,
+        Hull,
+    },
+    ship::Ship,
+    template::TemplateStore,
+};
+use std::slice::Iter;
 
 pub struct World {
     pub ships: Vec<Ship>,
@@ -38,29 +45,35 @@ pub struct Shop {
     pub weapon_counts: Vec<u32>,
 }
 
-fn sort_components(
+pub fn sort_components(
     complist: &Vec<u32>,
     comp_getter: fn(usize) -> &'static dyn Component,
-) -> Vec<(&'static dyn Component, u32)> {
-    let mut res: Vec<(&'static dyn Component, u32)> = complist
+) -> Vec<(usize, &'static dyn Component, u32)> {
+    let mut res: Vec<(usize, &'static dyn Component, u32)> = complist
         .iter()
         .enumerate()
         .filter_map(|(id, &count)| match count {
-            x if x > 0 => Some((comp_getter(id), x)),
+            x if x > 0 => Some((id, comp_getter(id), x)),
             _ => None,
         })
         .collect();
-    res.sort_by(|a, b| a.0.name().cmp(b.0.name()));
+    res.sort_by(|a, b| a.1.name().cmp(b.1.name()));
     res
 }
 
 impl Shop {
-    pub fn available_engines(&self) -> Vec<(&'static dyn Component, u32)> {
-        sort_components(&self.engine_counts, TemplateStore::engine)
+    pub fn available_sorted_components(&self, ctype: ComponentType) -> Vec<(usize, &'static dyn Component, u32)> {
+        match ctype {
+            ComponentType::Engine => sort_components(&self.engine_counts, TemplateStore::engine),
+            ComponentType::Weapon => sort_components(&self.weapon_counts, TemplateStore::weapon),
+        }
     }
 
-    pub fn available_weapons(&self) -> Vec<(&'static dyn Component, u32)> {
-        sort_components(&self.weapon_counts, TemplateStore::weapon)
+    pub fn take_component(&mut self, id: usize, ctype: ComponentType) {
+        match ctype {
+            ComponentType::Engine => self.engine_counts[id] -= 1,
+            ComponentType::Weapon => self.weapon_counts[id] -= 1,
+        }
     }
 }
 

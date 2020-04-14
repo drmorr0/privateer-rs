@@ -1,9 +1,32 @@
 use serde::Deserialize;
-use std::any::Any;
-use std::collections::HashMap;
-use std::fmt;
+use std::{
+    any::Any,
+    fmt,
+};
 
 use component_derive::Component;
+
+#[derive(Clone, Copy)]
+pub enum ComponentType {
+    Engine,
+    Weapon,
+}
+
+impl ComponentType {
+    pub fn to_string(&self) -> String {
+        match self {
+            ComponentType::Engine => "Engine".to_string(),
+            ComponentType::Weapon => "Weeapon".to_string(),
+        }
+    }
+
+    pub fn to_plural(&self) -> String {
+        match self {
+            ComponentType::Engine => "Engines".to_string(),
+            ComponentType::Weapon => "Weeapons".to_string(),
+        }
+    }
+}
 
 pub trait Component: std::fmt::Debug + BoxClone {
     // We implement the as_any/as_any_mut functions so we can downcast a component to a specific type
@@ -54,6 +77,7 @@ pub enum HullClass {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct HullSegment {
+    pub name: String,
     pub armor: u32,
     pub slots: u8,
 
@@ -70,7 +94,7 @@ pub struct Hull {
 
     pub class: HullClass,
     pub role: String,
-    pub segments: HashMap<String, HullSegment>,
+    pub segment_list: Vec<HullSegment>,
 }
 
 #[derive(Component, Clone, Debug, Deserialize)]

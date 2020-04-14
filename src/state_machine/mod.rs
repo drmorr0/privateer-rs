@@ -1,8 +1,13 @@
 pub mod ship_builder;
-use crate::template::TemplateStore;
-use crate::world::World;
+use crate::{
+    template::TemplateStore,
+    world::World,
+};
 use anyhow::Result as AnyResult;
-use std::io::{self, Write};
+use std::io::{
+    self,
+    Write,
+};
 
 type StatePointer = Box<dyn State>;
 
@@ -27,16 +32,13 @@ impl State for EntryState {
         io::stdout().flush()?;
         Ok(())
     }
-
     fn handle_input(&self, world: &mut World) -> AnyResult<ContextAction> {
         let mut response = String::new();
-        io::stdin()
-            .read_line(&mut response)
-            .expect("Error reading input");
+        io::stdin().read_line(&mut response).expect("Error reading input");
         let ship_id = world.mk_ship(response, TemplateStore::hull(0).unwrap().clone());
-        Ok(ContextAction::Replace(Box::new(
-            ship_builder::BuilderRootState { ship_id },
-        )))
+        Ok(ContextAction::Replace(Box::new(ship_builder::BuilderRootState {
+            ship_id,
+        })))
     }
 }
 
@@ -80,15 +82,15 @@ impl<'ctx> Context {
                         ContextAction::Replace(s) => {
                             self.stack.pop();
                             self.stack.push(s);
-                        }
+                        },
                         ContextAction::Bounce => {
                             self.stack.pop();
-                        }
+                        },
                         ContextAction::Err(e) => {
                             return Err(e);
-                        }
+                        },
                     }
-                }
+                },
                 None => break,
             }
         }

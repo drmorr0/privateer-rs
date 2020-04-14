@@ -1,5 +1,13 @@
 use crate::components::*;
-use std::fmt;
+use anyhow::Result as AnyResult;
+use std::{
+    fmt,
+    iter::Enumerate,
+    slice::{
+        Iter,
+        IterMut,
+    },
+};
 
 #[derive(Debug)]
 pub struct Ship {
@@ -17,32 +25,17 @@ impl Ship {
         }
     }
 
-    pub fn add_component(
-        &mut self,
-        component: &dyn Component,
-        location: &str,
-    ) -> Result<(), String> {
+    pub fn add_component(&mut self, component: &dyn Component, id: usize) -> AnyResult<u8, u8> {
         let next_id = self.components.len();
-        match self.segment(location) {
-            Some(segment) => {
-                if segment.used_slots + component.slots() > segment.slots {
-                    return Err(format!(
-                        "The requested component does not fit in {}",
-                        location
-                    ));
-                }
-                segment.used_slots += component.slots();
-                segment.component_ids.push(next_id);
-                self.components.push(component.box_clone());
-            }
-            None => {
-                return Err(format!(
-                    "The requested location {} does not exist",
-                    location
-                ))
-            }
+        let segment = &mut self.hull_mut().segment_list[id];
+        let slots_remaining = segment.slots - segment.used_slots;
+        if component.slots() > slots_remaining {
+            return Err(slots_remaining);
         }
-        Ok(())
+        segment.used_slots += component.slots();
+        segment.component_ids.push(next_id);
+        self.components.push(component.box_clone());
+        Ok(slots_remaining - component.slots())
     }
 
     pub fn hull(&self) -> &Hull {
@@ -52,11 +45,23 @@ impl Ship {
         }
     }
 
-    pub fn segment(&mut self, name: &str) -> Option<&mut HullSegment> {
+    pub fn hull_mut(&mut self) -> &mut Hull {
         match self.components[0].as_any_mut().downcast_mut::<Hull>() {
-            Some(h) => h.segments.get_mut(name),
+            Some(h) => h,
             None => panic!("The first component isn't a Hull!"),
         }
+    }
+
+    pub fn segment(&self, id: usize) -> &HullSegment {
+        &self.hull().segment_list[id]
+    }
+
+    pub fn segments(&self) -> Enumerate<Iter<'_, HullSegment>> {
+        self.hull().segment_list.iter().enumerate()
+    }
+
+    pub fn segments_mut(&mut self) -> Enumerate<IterMut<'_, HullSegment>> {
+        self.hull_mut().segment_list.iter_mut().enumerate()
     }
 
     pub fn mass(&self) -> u32 {

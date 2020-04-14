@@ -1,8 +1,12 @@
-use crate::components::Component;
-use crate::input;
-use crate::state_machine::{ContextAction, ExitState, State};
-use crate::world::World;
-use anyhow::anyhow;
+use crate::{
+    components::ComponentType,
+    input,
+    state_machine::{
+        ContextAction,
+        State,
+    },
+    world::World,
+};
 use anyhow::Result as AnyResult;
 
 pub struct BuilderRootState {
@@ -15,27 +19,28 @@ impl State for BuilderRootState {
             "Welcome to {}, the finest purveyor of goods for your spaceship!",
             world.shops[0].name
         );
-        println!("How can we help you?");
         Ok(())
     }
 
     fn handle_input(&self, _: &mut World) -> AnyResult<ContextAction> {
-        match input::get_response_choices(&vec!["buy parts", "sell parts", "examine ship", "leave"])
-        {
-            Ok(0) => Ok(ContextAction::Pushdown(Box::new(SelectComponentState {
-                ship_id: self.ship_id,
-            }))),
-            Ok(1) => Ok(ContextAction::Pushdown(Box::new(SellState {
-                ship_id: self.ship_id,
-            }))),
-            Ok(2) => Ok(ContextAction::Pushdown(Box::new(ExamineState {
-                ship_id: self.ship_id,
-            }))),
-            Ok(3) => Ok(ContextAction::Replace(Box::new(ExitState {
-                message: "You fly away in your ship and take to the stars!".to_string(),
-            }))),
-            _ => Err(anyhow!("ohno")),
-        }
+        Ok(input::get_response_choices(
+            "How can we help you?",
+            &mut vec![
+                (
+                    "buy parts",
+                    ContextAction::Pushdown(Box::new(SelectComponentState { ship_id: self.ship_id })),
+                ),
+                (
+                    "sell parts",
+                    ContextAction::Pushdown(Box::new(SellState { ship_id: self.ship_id })),
+                ),
+                (
+                    "examine ship",
+                    ContextAction::Pushdown(Box::new(ExamineState { ship_id: self.ship_id })),
+                ),
+                ("leave", ContextAction::Bounce),
+            ],
+        ))
     }
 }
 
@@ -48,40 +53,86 @@ impl State for SelectComponentState {
         println!("Here's what we have for sale.");
         Ok(())
     }
-    fn handle_input(&self, world: &mut World) -> AnyResult<ContextAction> {
-        let choices = vec!["Engines", "Weapons"];
-        let idx = input::get_response_choices(&choices)?;
-        Ok(ContextAction::Pushdown(Box::new(AddComponentState {
-            ship_id: self.ship_id,
-            component_type: choices[idx].to_string(),
-            available_components: match choices[idx] {
-                "Engines" => world.shops[0].available_engines(),
-                _ => unimplemented!(),
-            },
-        })))
+    fn handle_input(&self, _: &mut World) -> AnyResult<ContextAction> {
+        let choices = vec![ComponentType::Engine, ComponentType::Weapon];
+        let mut choices = choices
+            .iter()
+            .map(|&component_type| {
+                (
+                    component_type.to_plural(),
+                    ContextAction::Pushdown(Box::new(AddComponentState {
+                        component_type,
+                        ship_id: self.ship_id,
+                        shop_id: 0,
+                    })),
+                )
+            })
+            .collect();
+        Ok(input::get_response_choices(
+            "What type of components are you interested in?",
+            &mut choices,
+        ))
     }
 }
 
 pub struct AddComponentState {
-    pub ship_id: usize,
-    component_type: String,
-    available_components: Vec<(&'static dyn Component, u32)>,
+    component_type: ComponentType,
+    ship_id: usize,
+    shop_id: usize,
 }
 
 impl State for AddComponentState {
     fn enter(&self, _: &World) -> AnyResult<()> {
-        println!("Ok, we have the following {}", self.component_type);
-        for (i, (component, count)) in self.available_components.iter().enumerate() {
-            println!("  [{}] {}: {} available", i + 1, component.name(), count);
-        }
         Ok(())
     }
     fn handle_input(&self, world: &mut World) -> AnyResult<ContextAction> {
-        let u: Vec<usize> = (1..self.available_components.len() + 1).collect();
-        let choice = input::get_response("", &u)?;
-        world.ships[self.ship_id]
-            .add_component(self.available_components[choice - 1].0.clone(), "Fuselage")
-            .unwrap();
+        let available_components = world.shops[self.shop_id].available_sorted_components(self.component_type);
+        let (&choice_id, choice) = input::get_response_choices(
+            &format!("Ok, we have the following {}", self.component_type.to_plural()),
+            &mut available_components
+                .iter()
+                .map(|(id, comp, available)| {
+                    (
+                        format!("{} ({} available, {} slots)", comp.name(), available, comp.slots()),
+                        (id, comp),
+                    )
+                })
+                .collect(),
+        );
+        let ship = &mut world.ships[self.ship_id];
+        let mut segments: Vec<(String, usize)> = ship
+            .segments()
+            .map(|(id, segment)| {
+                (
+                    format!(
+                        "{} ({}/{} slots used)",
+                        &segment.name, &segment.used_slots, &segment.slots
+                    ),
+                    id,
+                )
+            })
+            .collect();
+        let location = input::get_response_choices(
+            &format!("Where do you want to install the {}", choice.name()),
+            &mut segments,
+        );
+        match ship.add_component(choice.clone(), location) {
+            Ok(slots_remaining) => {
+                world.shops[self.shop_id].take_component(choice_id, self.component_type);
+                println!(
+                    "We installed the {} in the {}; you have {} slots remaining in that segment.",
+                    choice.name(),
+                    ship.segment(location).name,
+                    slots_remaining,
+                );
+            },
+            Err(slots_remaining) => println!(
+                "Sorry, you don't have enough room to install a {} in the {}; it only has {} slots remaining.",
+                choice.name(),
+                ship.segment(location).name,
+                slots_remaining,
+            ),
+        }
         Ok(ContextAction::Bounce)
     }
 }
