@@ -3,6 +3,7 @@ mod input;
 mod ship;
 mod state_machine;
 mod template;
+mod util;
 mod world;
 
 use std::error::Error;

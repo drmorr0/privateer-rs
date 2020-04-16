@@ -1,4 +1,10 @@
-use crate::components::*;
+use crate::{
+    components::*,
+    util::{
+        enumiter,
+        enumiter_mut,
+    },
+};
 use anyhow::Result as AnyResult;
 use std::{
     fmt,
@@ -57,11 +63,11 @@ impl Ship {
     }
 
     pub fn segments(&self) -> Enumerate<Iter<'_, HullSegment>> {
-        self.hull().segment_list.iter().enumerate()
+        enumiter(&self.hull().segment_list)
     }
 
     pub fn segments_mut(&mut self) -> Enumerate<IterMut<'_, HullSegment>> {
-        self.hull_mut().segment_list.iter_mut().enumerate()
+        enumiter_mut(&mut self.hull_mut().segment_list)
     }
 
     pub fn mass(&self) -> u32 {

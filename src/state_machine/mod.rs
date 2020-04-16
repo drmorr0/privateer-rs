@@ -1,3 +1,4 @@
+pub mod ship;
 pub mod ship_builder;
 use crate::{
     template::TemplateStore,
@@ -38,6 +39,7 @@ impl State for EntryState {
         let ship_id = world.mk_ship(response, TemplateStore::hull(0).unwrap().clone());
         Ok(ContextAction::Replace(Box::new(ship_builder::BuilderRootState {
             ship_id,
+            shop_id: 0,
         })))
     }
 }

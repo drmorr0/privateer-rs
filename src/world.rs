@@ -6,8 +6,8 @@ use crate::{
     },
     ship::Ship,
     template::TemplateStore,
+    util::enumiter,
 };
-use std::slice::Iter;
 
 pub struct World {
     pub ships: Vec<Ship>,
@@ -49,9 +49,7 @@ pub fn sort_components(
     complist: &Vec<u32>,
     comp_getter: fn(usize) -> &'static dyn Component,
 ) -> Vec<(usize, &'static dyn Component, u32)> {
-    let mut res: Vec<(usize, &'static dyn Component, u32)> = complist
-        .iter()
-        .enumerate()
+    let mut res: Vec<(usize, &'static dyn Component, u32)> = enumiter(complist)
         .filter_map(|(id, &count)| match count {
             x if x > 0 => Some((id, comp_getter(id), x)),
             _ => None,
@@ -76,16 +74,3 @@ impl Shop {
         }
     }
 }
-
-/*impl fmt::Display for Shop {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Engines:")?;
-        writeln!(f, "--------")?;
-
-        for (i, (id, count)) in self.engine_counts.iter().enumerate() {
-            let component = TemplateStore::engine(*id).unwrap();
-            writeln!(f, "  [{}] {}: {}", i, component.name(), count)?;
-        }
-        Ok(())
-    }
-}*/

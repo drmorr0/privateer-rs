@@ -1,8 +1,11 @@
-use crate::components::{
-    Component,
-    Engine,
-    Hull,
-    Weapon,
+use crate::{
+    components::{
+        Component,
+        Engine,
+        Hull,
+        Weapon,
+    },
+    util::enumiter,
 };
 use anyhow;
 use erased_serde;
@@ -43,7 +46,7 @@ impl TemplateStore {
     }
 
     pub fn hull_iter() -> Enumerate<Iter<'static, Hull>> {
-        TEMPLATE_STORE.hull_templates.iter().enumerate()
+        enumiter(&TEMPLATE_STORE.hull_templates)
     }
 
     pub fn engine(id: usize) -> &'static dyn Component {
@@ -52,7 +55,7 @@ impl TemplateStore {
     }
 
     pub fn engine_iter() -> Enumerate<Iter<'static, Engine>> {
-        TEMPLATE_STORE.engine_templates.iter().enumerate()
+        enumiter(&TEMPLATE_STORE.engine_templates)
     }
 
     pub fn engine_count() -> usize {
@@ -65,7 +68,7 @@ impl TemplateStore {
     }
 
     pub fn weapon_iter() -> Enumerate<Iter<'static, Weapon>> {
-        TEMPLATE_STORE.weapon_templates.iter().enumerate()
+        enumiter(&TEMPLATE_STORE.weapon_templates)
     }
 
     pub fn weapon_count() -> usize {

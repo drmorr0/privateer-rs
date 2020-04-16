@@ -1,3 +1,4 @@
+use crate::util::enumiter;
 use std::{
     fmt,
     io::{
@@ -27,26 +28,50 @@ pub fn get_response<T: ToString + Copy>(prompt: &str, choices: &Vec<T>) -> anyho
 }
 
 pub fn get_response_choices<'a, T: fmt::Display, U>(prompt: &str, choices: &mut Vec<(T, U)>) -> U {
+    get_response_choices_helper(prompt, choices, None)
+}
+
+pub fn get_response_choices_or_back<'a, T: fmt::Display, U>(
+    prompt: &str,
+    choices: &mut Vec<(T, U)>,
+    back_choice: U,
+) -> U {
+    get_response_choices_helper(prompt, choices, Some(back_choice))
+}
+
+fn get_response_choices_helper<'a, T: fmt::Display, U>(
+    prompt: &str,
+    choices: &mut Vec<(T, U)>,
+    back_choice: Option<U>,
+) -> U {
     println!("{}", prompt);
     loop {
-        let choice_str = choices
-            .iter()
-            .enumerate()
+        let mut choice_str = enumiter(choices)
             .map(|(i, x)| format!("  [{}] {}", i + 1, x.0))
             .collect::<Vec<String>>()
             .join("\n");
+        if back_choice.is_some() {
+            choice_str += &format!("\n  [{}] Back\n", choices.len() + 1)
+        }
         print!("{}\n> ", choice_str);
+
         io::stdout().flush().unwrap();
 
         let mut response = String::new();
         io::stdin().read_line(&mut response).unwrap();
 
-        match response.trim().parse::<usize>() {
+        response = response.trim().to_lowercase().to_string();
+        if &response == "quit" {
+            std::process::exit(0);
+        }
+
+        match response.parse::<usize>() {
             // We want to return the actual object that was chosen which means we have to take it
             // out of the vector and take ownership of it; this, in turn, requires the vector to
             // be mutable.
-            Ok(i) => return choices.swap_remove(i - 1).1,
-            Err(_) => {
+            Ok(i) if i <= choices.len() => return choices.swap_remove(i - 1).1,
+            Ok(i) if i == choices.len() + 1 && back_choice.is_some() => return back_choice.unwrap(),
+            _ => {
                 println!("Sorry, I didn't understand.  Please try again.");
                 continue;
             },
