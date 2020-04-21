@@ -1,5 +1,6 @@
 use crate::{
     components::{
+        make_ctype_with_id,
         Component,
         ComponentType,
     },
@@ -26,8 +27,12 @@ impl State for SelectComponentTypeState {
     }
 
     fn handle_input(&self, _: &mut World) -> AnyResult<ContextAction> {
-        let choices = vec![ComponentType::Engine, ComponentType::Weapon];
-        let mut choices = choices
+        let choices = vec![
+            // The actual ID here doesn't matter, if it ever gets used we'll panic
+            ComponentType::Engine(usize::max_value()),
+            ComponentType::Weapon(usize::max_value()),
+        ];
+        let mut choices_str = choices
             .iter()
             .map(|&component_type| {
                 (
@@ -42,7 +47,7 @@ impl State for SelectComponentTypeState {
             .collect();
         Ok(input::get_response_choices_or_back(
             "What type of components are you interested in?",
-            &mut choices,
+            &mut choices_str,
             ContextAction::Bounce, // action to take on "Back"
         ))
     }
@@ -71,8 +76,7 @@ impl State for SelectComponentState {
                         component.slots()
                     ),
                     ContextAction::Replace(Box::new(SelectLocationState {
-                        component_type: self.component_type,
-                        component_id: *component_id,
+                        component_type: make_ctype_with_id(self.component_type, *component_id),
                         component: *component,
                         ship_id: self.ship_id,
                         shop_id: self.shop_id,
@@ -91,7 +95,6 @@ impl State for SelectComponentState {
 
 struct SelectLocationState {
     component_type: ComponentType,
-    component_id: usize,
     component: &'static dyn Component,
     ship_id: usize,
     shop_id: usize,
@@ -114,7 +117,6 @@ impl State for SelectLocationState {
                     ),
                     ContextAction::Replace(Box::new(AddComponentState {
                         component_type: self.component_type,
-                        component_id: self.component_id,
                         component: self.component,
                         location_id,
                         ship_id: self.ship_id,
@@ -133,7 +135,6 @@ impl State for SelectLocationState {
 
 struct AddComponentState {
     component_type: ComponentType,
-    component_id: usize,
     component: &'static dyn Component,
     location_id: usize,
     ship_id: usize,
@@ -149,7 +150,7 @@ impl State for AddComponentState {
         let ship = &mut world.ships[self.ship_id];
         match ship.add_component(self.component.clone(), self.location_id) {
             Ok(slots_remaining) => {
-                world.shops[self.shop_id].take_component(self.component_id, self.component_type);
+                world.shops[self.shop_id].take_component(self.component_type);
                 println!(
                     "We installed the {} in the {}; you have {} slots remaining in that segment.",
                     self.component.name(),

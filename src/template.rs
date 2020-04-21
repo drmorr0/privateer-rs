@@ -1,13 +1,14 @@
 use crate::{
     components::{
         Component,
+        ComponentType,
         Engine,
         Hull,
         Weapon,
     },
     util::enumiter,
 };
-use anyhow;
+use anyhow::Result as AnyResult;
 use erased_serde;
 use lazy_static::lazy_static;
 use ron::de::Deserializer;
@@ -76,7 +77,7 @@ impl TemplateStore {
     }
 }
 
-fn read_template_file<T: Component + for<'de> Deserialize<'de>>(filename: String) -> anyhow::Result<Vec<T>> {
+fn read_template_file<T: Component + for<'de> Deserialize<'de>>(filename: String) -> AnyResult<Vec<T>> {
     let f = match File::open(&filename) {
         Ok(f) => f,
         Err(e) => {
@@ -89,12 +90,12 @@ fn read_template_file<T: Component + for<'de> Deserialize<'de>>(filename: String
     reader.read_to_string(&mut tmpl_str)?;
     let ron_deserializer = &mut Deserializer::from_str(&tmpl_str)?;
     let mut ron_deserializer = erased_serde::Deserializer::erase(ron_deserializer);
-    let res: Vec<T> = match erased_serde::deserialize(&mut ron_deserializer) {
+    let mut templates: Vec<T> = match erased_serde::deserialize(&mut ron_deserializer) {
         Ok(f) => f,
         Err(e) => {
             println!("Could not parse RON-file {}:\n  {}", &filename, e);
             panic!();
         },
     };
-    Ok(res)
+    Ok(templates)
 }

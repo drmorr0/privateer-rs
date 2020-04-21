@@ -6,25 +6,36 @@ use std::{
 
 use component_derive::Component;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub enum ComponentType {
-    Engine,
-    Weapon,
+    Hull(usize),
+    Engine(usize),
+    Weapon(usize),
 }
 
 impl ComponentType {
     pub fn to_string(&self) -> String {
         match self {
-            ComponentType::Engine => "Engine".to_string(),
-            ComponentType::Weapon => "Weeapon".to_string(),
+            ComponentType::Hull(_) => "Hull".to_string(),
+            ComponentType::Engine(_) => "Engine".to_string(),
+            ComponentType::Weapon(_) => "Weeapon".to_string(),
         }
     }
 
     pub fn to_plural(&self) -> String {
         match self {
-            ComponentType::Engine => "Engines".to_string(),
-            ComponentType::Weapon => "Weeapons".to_string(),
+            ComponentType::Hull(_) => "Hulls".to_string(),
+            ComponentType::Engine(_) => "Engines".to_string(),
+            ComponentType::Weapon(_) => "Weeapons".to_string(),
         }
+    }
+}
+
+pub fn make_ctype_with_id(ctype: ComponentType, id: usize) -> ComponentType {
+    match ctype {
+        ComponentType::Hull(_) => ComponentType::Hull(id),
+        ComponentType::Engine(_) => ComponentType::Engine(id),
+        ComponentType::Weapon(_) => ComponentType::Weapon(id),
     }
 }
 
@@ -33,6 +44,7 @@ pub trait Component: std::fmt::Debug + BoxClone {
     // https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object
     fn as_any(&self) -> &(dyn Any + 'static);
     fn as_any_mut(&mut self) -> &mut (dyn Any + 'static);
+    fn ctype(&self) -> ComponentType;
     fn name(&self) -> &str;
     fn mass(&self) -> u32;
     fn slots(&self) -> u8;
@@ -63,6 +75,7 @@ impl Clone for Box<dyn Component> {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ComponentData {
+    pub ctype: ComponentType,
     pub name: String,
     pub mass: u32,
     pub slots: u8,

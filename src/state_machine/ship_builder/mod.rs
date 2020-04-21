@@ -4,10 +4,6 @@ use crate::{
     input,
     state_machine::{
         ship::ExamineShipState,
-        ship_builder::{
-            add_component::SelectComponentTypeState,
-            remove_component::SellState,
-        },
         ContextAction,
         State,
     },
@@ -35,14 +31,17 @@ impl State for BuilderRootState {
             &mut vec![
                 (
                     "Buy parts",
-                    ContextAction::Pushdown(Box::new(SelectComponentTypeState {
+                    ContextAction::Pushdown(Box::new(add_component::SelectComponentTypeState {
                         ship_id: self.ship_id,
                         shop_id: self.shop_id,
                     })),
                 ),
                 (
                     "Sell parts",
-                    ContextAction::Pushdown(Box::new(SellState { ship_id: self.ship_id })),
+                    ContextAction::Pushdown(Box::new(remove_component::SelectComponentState {
+                        ship_id: self.ship_id,
+                        shop_id: self.shop_id,
+                    })),
                 ),
                 (
                     "Examine ship",

@@ -1,5 +1,6 @@
 [(
     common: (
+        ctype: Hull(0),
         name: "Junk Heap, Mk II",
         mass: 100,
         slots: 0,
@@ -15,6 +16,7 @@
 ),
 (
     common: (
+        ctype: Hull(1),
         name: "Atlas",
         mass: 1000,
         slots: 0,

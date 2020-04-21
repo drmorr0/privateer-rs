@@ -16,7 +16,6 @@ pub enum ContextAction {
     Pushdown(StatePointer),
     Replace(StatePointer),
     Bounce,
-    Err(anyhow::Error),
 }
 
 pub trait State {
@@ -36,7 +35,7 @@ impl State for EntryState {
     fn handle_input(&self, world: &mut World) -> AnyResult<ContextAction> {
         let mut response = String::new();
         io::stdin().read_line(&mut response).expect("Error reading input");
-        let ship_id = world.mk_ship(response, TemplateStore::hull(0).unwrap().clone());
+        let ship_id = world.mk_ship(response.trim(), TemplateStore::hull(0).unwrap().clone());
         Ok(ContextAction::Replace(Box::new(ship_builder::BuilderRootState {
             ship_id,
             shop_id: 0,
@@ -87,9 +86,6 @@ impl<'ctx> Context {
                         },
                         ContextAction::Bounce => {
                             self.stack.pop();
-                        },
-                        ContextAction::Err(e) => {
-                            return Err(e);
                         },
                     }
                 },

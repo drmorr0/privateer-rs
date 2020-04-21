@@ -1,5 +1,6 @@
 [(
     common: (
+        ctype: Engine(0),
         name: "Ion Engine, Mk I",
         mass: 20,
         slots: 10,
@@ -8,6 +9,7 @@
 ),
 (
     common: (
+        ctype: Engine(1),
         name: "Ion Engine, Mk II",
         mass: 25,
         slots: 15,

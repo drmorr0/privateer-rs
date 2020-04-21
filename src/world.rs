@@ -24,9 +24,9 @@ impl<'wld> World {
         w
     }
 
-    pub fn mk_ship(&mut self, name: String, hull: Hull) -> usize {
+    pub fn mk_ship(&mut self, name: &str, hull: Hull) -> usize {
         let id = self.ships.len();
-        self.ships.push(Ship::new(name, id, &hull));
+        self.ships.push(Ship::new(name.to_string(), id, &hull));
         id
     }
 
@@ -62,15 +62,25 @@ pub fn sort_components(
 impl Shop {
     pub fn available_sorted_components(&self, ctype: ComponentType) -> Vec<(usize, &'static dyn Component, u32)> {
         match ctype {
-            ComponentType::Engine => sort_components(&self.engine_counts, TemplateStore::engine),
-            ComponentType::Weapon => sort_components(&self.weapon_counts, TemplateStore::weapon),
+            ComponentType::Hull(_) => vec![],
+            ComponentType::Engine(_) => sort_components(&self.engine_counts, TemplateStore::engine),
+            ComponentType::Weapon(_) => sort_components(&self.weapon_counts, TemplateStore::weapon),
         }
     }
 
-    pub fn take_component(&mut self, id: usize, ctype: ComponentType) {
+    pub fn take_component(&mut self, ctype: ComponentType) {
         match ctype {
-            ComponentType::Engine => self.engine_counts[id] -= 1,
-            ComponentType::Weapon => self.weapon_counts[id] -= 1,
+            ComponentType::Hull(_) => (),
+            ComponentType::Engine(id) => self.engine_counts[id] -= 1,
+            ComponentType::Weapon(id) => self.weapon_counts[id] -= 1,
+        }
+    }
+
+    pub fn gain_component(&mut self, component: Box<dyn Component>) {
+        match component.ctype() {
+            ComponentType::Hull(_) => (),
+            ComponentType::Engine(id) => self.engine_counts[id] += 1,
+            ComponentType::Weapon(id) => self.weapon_counts[id] += 1,
         }
     }
 }

@@ -7,18 +7,22 @@ use std::{
     },
 };
 
-pub fn get_response<T: ToString + Copy>(prompt: &str, choices: &Vec<T>) -> anyhow::Result<T> {
+pub fn get_response_yn(prompt: &str) -> bool {
+    get_response_inline(prompt, &mut vec!["yes", "no"]) == "yes"
+}
+
+pub fn get_response_inline<T: ToString>(prompt: &str, choices: &mut Vec<T>) -> T {
     loop {
-        let stringify = choices.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
-        print!("{} [{}] ", prompt, stringify);
-        io::stdout().flush()?;
+        let responses = choices.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" ");
+        print!("{} [{}] ", prompt, responses);
+        io::stdout().flush().unwrap();
 
         let mut response = String::new();
-        io::stdin().read_line(&mut response)?;
-        response = response.to_lowercase();
+        io::stdin().read_line(&mut response).unwrap();
+        response = response.trim().to_lowercase();
 
-        match choices.iter().position(|c| c.to_string().starts_with(response.trim())) {
-            Some(i) => return Ok(choices[i]),
+        match choices.iter().position(|c| c.to_string().starts_with(&response)) {
+            Some(i) => return choices.swap_remove(i),
             None => {
                 println!("Sorry, I didn't understand.  Please try again.");
                 continue;
@@ -60,7 +64,7 @@ fn get_response_choices_helper<'a, T: fmt::Display, U>(
         let mut response = String::new();
         io::stdin().read_line(&mut response).unwrap();
 
-        response = response.trim().to_lowercase().to_string();
+        response = response.trim().to_lowercase();
         if &response == "quit" {
             std::process::exit(0);
         }
