@@ -7,164 +7,203 @@ use crate::{
     input,
     state_machine::{
         ContextAction,
+        ResponseType,
         State,
     },
     world::World,
 };
-use anyhow::Result as AnyResult;
+use std::cell::RefCell;
 
 // The SelectComponentTypeState is the entry point to the flow which adds new components into a
 // ship.  We use it to select the type of component which the player wants to add.
+#[derive(Clone)]
 pub struct SelectComponentTypeState {
-    pub ship_id: usize,
-    pub shop_id: usize,
+    ship_id: usize,
+    shop_id: usize,
+    choices: RefCell<Vec<(String, ContextAction)>>,
+}
+
+impl SelectComponentTypeState {
+    pub fn new(ship_id: usize, shop_id: usize) -> Box<SelectComponentTypeState> {
+        Box::new(SelectComponentTypeState {
+            ship_id,
+            shop_id,
+            choices: RefCell::new(Vec::new()),
+        })
+    }
 }
 
 impl State for SelectComponentTypeState {
-    fn enter(&self, _: &World) -> AnyResult<()> {
+    fn enter(&self, _: &World) -> ResponseType {
         println!("Here's what we have for sale.");
-        Ok(())
-    }
-
-    fn handle_input(&self, _: &mut World) -> AnyResult<ContextAction> {
-        let choices = vec![
+        let ctypes = vec![
             // The actual ID here doesn't matter, if it ever gets used we'll panic
             ComponentType::Engine(usize::max_value()),
             ComponentType::Weapon(usize::max_value()),
         ];
-        let mut choices_str = choices
-            .iter()
-            .map(|&component_type| {
-                (
-                    component_type.to_plural(),
-                    ContextAction::Replace(Box::new(SelectComponentState {
-                        component_type,
-                        ship_id: self.ship_id,
-                        shop_id: self.shop_id,
-                    })),
-                )
-            })
-            .collect();
-        Ok(input::get_response_choices_or_back(
-            "What type of components are you interested in?",
-            &mut choices_str,
-            ContextAction::Bounce, // action to take on "Back"
-        ))
+        self.choices.replace(
+            ctypes
+                .iter()
+                .map(|&ctype| {
+                    (
+                        ctype.to_plural(),
+                        ContextAction::Replace(SelectComponentState::new(self.ship_id, self.shop_id, ctype)),
+                    )
+                })
+                .collect(),
+        );
+        input::prompt_choices("What type of components are you interested in?", &self.choices.borrow());
+        ResponseType::Raw
+    }
+
+    fn transition(&self, tokens: &Vec<String>, _: &mut World) -> Option<ContextAction> {
+        input::match_choice(&tokens[0], &self.choices.borrow())
     }
 }
 
+#[derive(Clone)]
 struct SelectComponentState {
-    component_type: ComponentType,
     ship_id: usize,
     shop_id: usize,
+    ctype: ComponentType,
+    available_components: RefCell<Vec<(usize, &'static dyn Component, u32)>>,
+    choices: RefCell<Vec<(String, ContextAction)>>,
+}
+
+impl SelectComponentState {
+    pub fn new(ship_id: usize, shop_id: usize, ctype: ComponentType) -> Box<SelectComponentState> {
+        Box::new(SelectComponentState {
+            ship_id,
+            shop_id,
+            ctype,
+            available_components: RefCell::new(Vec::new()),
+            choices: RefCell::new(Vec::new()),
+        })
+    }
 }
 
 impl State for SelectComponentState {
-    fn enter(&self, _: &World) -> AnyResult<()> {
-        Ok(())
-    }
-    fn handle_input(&self, world: &mut World) -> AnyResult<ContextAction> {
-        let available_components = world.shops[self.shop_id].available_sorted_components(self.component_type);
-        let mut choices = available_components
-            .iter()
-            .map(|(component_id, component, available)| {
-                (
-                    format!(
-                        "{} ({} available, {} slots)",
-                        component.name(),
-                        available,
-                        component.slots()
-                    ),
-                    ContextAction::Replace(Box::new(SelectLocationState {
-                        component_type: make_ctype_with_id(self.component_type, *component_id),
-                        component: *component,
-                        ship_id: self.ship_id,
-                        shop_id: self.shop_id,
-                    })),
-                )
-            })
-            .collect();
+    fn enter(&self, world: &World) -> ResponseType {
+        self.available_components
+            .replace(world.shops[self.shop_id].available_sorted_components(self.ctype));
+        self.choices.replace(
+            self.available_components
+                .borrow()
+                .iter()
+                .map(|(component_id, component, available)| {
+                    (
+                        format!(
+                            "{} ({} available, {} slots)",
+                            component.name(),
+                            available,
+                            component.slots()
+                        ),
+                        ContextAction::Replace(SelectLocationState::new(
+                            self.ship_id,
+                            self.shop_id,
+                            make_ctype_with_id(self.ctype, *component_id),
+                            *component,
+                        )),
+                    )
+                })
+                .collect(),
+        );
 
-        Ok(input::get_response_choices_or_back(
-            &format!("Ok, we have the following {}", self.component_type.to_plural()),
-            &mut choices,
-            ContextAction::Bounce,
-        ))
+        input::prompt_choices(
+            &format!("Ok, we have the following {}", self.ctype.to_plural()),
+            &self.choices.borrow(),
+        );
+        ResponseType::Tokenized
+    }
+
+    fn transition(&self, tokens: &Vec<String>, _: &mut World) -> Option<ContextAction> {
+        if tokens.len() > 1 {
+            match input::match_command_choice("inspect", tokens, &self.available_components.borrow()) {
+                Some(c) => {
+                    println!("\n{}", c.1);
+                    Some(ContextAction::Retry)
+                },
+                _ => None,
+            }
+        } else {
+            return input::match_choice(&tokens[0], &self.choices.borrow());
+        }
     }
 }
 
+#[derive(Clone)]
 struct SelectLocationState {
-    component_type: ComponentType,
-    component: &'static dyn Component,
     ship_id: usize,
     shop_id: usize,
+    ctype: ComponentType,
+    component: &'static dyn Component,
+    choices: RefCell<Vec<(String, usize)>>,
+}
+
+impl SelectLocationState {
+    pub fn new(
+        ship_id: usize,
+        shop_id: usize,
+        ctype: ComponentType,
+        component: &'static dyn Component,
+    ) -> Box<SelectLocationState> {
+        Box::new(SelectLocationState {
+            ship_id,
+            shop_id,
+            ctype,
+            component,
+            choices: RefCell::new(Vec::new()),
+        })
+    }
 }
 
 impl State for SelectLocationState {
-    fn enter(&self, _: &World) -> AnyResult<()> {
-        Ok(())
-    }
-
-    fn handle_input(&self, world: &mut World) -> AnyResult<ContextAction> {
-        let ship = &mut world.ships[self.ship_id];
-        let mut segments = ship
-            .segments()
-            .map(|(location_id, segment)| {
-                (
-                    format!(
-                        "{} ({}/{} slots used)",
-                        &segment.name, &segment.used_slots, &segment.slots
-                    ),
-                    ContextAction::Replace(Box::new(AddComponentState {
-                        component_type: self.component_type,
-                        component: self.component,
+    fn enter(&self, world: &World) -> ResponseType {
+        let ship = &world.ships[self.ship_id];
+        self.choices.replace(
+            ship.segments()
+                .map(|(location_id, segment)| {
+                    (
+                        format!(
+                            "{} ({}/{} slots used)",
+                            &segment.name, &segment.used_slots, &segment.slots
+                        ),
                         location_id,
-                        ship_id: self.ship_id,
-                        shop_id: self.shop_id,
-                    })),
-                )
-            })
-            .collect();
-        Ok(input::get_response_choices_or_back(
+                    )
+                })
+                .collect(),
+        );
+
+        input::prompt_choices(
             &format!("Where do you want to install the {}", self.component.name()),
-            &mut segments,
-            ContextAction::Bounce,
-        ))
-    }
-}
-
-struct AddComponentState {
-    component_type: ComponentType,
-    component: &'static dyn Component,
-    location_id: usize,
-    ship_id: usize,
-    shop_id: usize,
-}
-
-impl State for AddComponentState {
-    fn enter(&self, _: &World) -> AnyResult<()> {
-        Ok(())
+            &self.choices.borrow(),
+        );
+        ResponseType::Tokenized
     }
 
-    fn handle_input(&self, world: &mut World) -> AnyResult<ContextAction> {
-        let ship = &mut world.ships[self.ship_id];
-        match ship.add_component(self.component.clone(), self.location_id) {
-            Ok(slots_remaining) => {
-                world.shops[self.shop_id].take_component(self.component_type);
-                println!(
-                    "We installed the {} in the {}; you have {} slots remaining in that segment.",
+    fn transition(&self, tokens: &Vec<String>, world: &mut World) -> Option<ContextAction> {
+        if let Some(location_id) = input::match_choice(&tokens[0], &self.choices.borrow()) {
+            let ship = &mut world.ships[self.ship_id];
+            match ship.add_component(self.component.clone(), location_id) {
+                Ok(slots_remaining) => {
+                    world.shops[self.shop_id].take_component(self.ctype);
+                    println!(
+                        "We installed the {} in the {}; you have {} slots remaining in that segment.",
+                        self.component.name(),
+                        ship.segment(location_id).name,
+                        slots_remaining,
+                    );
+                },
+                Err(slots_remaining) => println!(
+                    "Sorry, you don't have enough room to install a {} in the {}; it only has {} slots remaining.",
                     self.component.name(),
-                    ship.segment(self.location_id).name,
+                    ship.segment(location_id).name,
                     slots_remaining,
-                );
-            },
-            Err(slots_remaining) => println!(
-                "Sorry, you don't have enough room to install a {} in the {}; it only has {} slots remaining.",
-                self.component.name(),
-                ship.segment(self.location_id).name,
-                slots_remaining,
-            ),
+                ),
+            }
+            Some(ContextAction::Bounce)
+        } else {
+            None
         }
-        Ok(ContextAction::Bounce)
     }
 }

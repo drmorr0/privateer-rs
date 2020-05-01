@@ -1,22 +1,24 @@
 use crate::{
     state_machine::{
         ContextAction,
+        ResponseType,
         State,
     },
     world::World,
 };
-use anyhow::Result as AnyResult;
 
+#[derive(Clone)]
 pub struct ExamineShipState {
     pub ship_id: usize,
 }
 
 impl State for ExamineShipState {
-    fn enter(&self, world: &World) -> AnyResult<()> {
+    fn enter(&self, world: &World) -> ResponseType {
         println!("Your ship: {}", world.ships[self.ship_id]);
-        Ok(())
+        ResponseType::None
     }
-    fn handle_input(&self, _: &mut World) -> AnyResult<ContextAction> {
-        Ok(ContextAction::Bounce)
+
+    fn transition(&self, _: &Vec<String>, _: &mut World) -> Option<ContextAction> {
+        Some(ContextAction::Bounce)
     }
 }

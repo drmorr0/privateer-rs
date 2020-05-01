@@ -1,12 +1,8 @@
-use crate::{
-    components::{
-        Component,
-        ComponentType,
-        Engine,
-        Hull,
-        Weapon,
-    },
-    util::enumiter,
+use crate::components::{
+    Component,
+    Engine,
+    Hull,
+    Weapon,
 };
 use anyhow::Result as AnyResult;
 use erased_serde;
@@ -19,8 +15,6 @@ use std::{
         BufReader,
         Read,
     },
-    iter::Enumerate,
-    slice::Iter,
 };
 
 lazy_static! {
@@ -46,17 +40,9 @@ impl TemplateStore {
         TEMPLATE_STORE.hull_templates.get(id)
     }
 
-    pub fn hull_iter() -> Enumerate<Iter<'static, Hull>> {
-        enumiter(&TEMPLATE_STORE.hull_templates)
-    }
-
     pub fn engine(id: usize) -> &'static dyn Component {
         let e = TEMPLATE_STORE.engine_templates.get(id).unwrap();
-        (e as &'static dyn Component)
-    }
-
-    pub fn engine_iter() -> Enumerate<Iter<'static, Engine>> {
-        enumiter(&TEMPLATE_STORE.engine_templates)
+        e as &'static dyn Component
     }
 
     pub fn engine_count() -> usize {
@@ -65,11 +51,7 @@ impl TemplateStore {
 
     pub fn weapon(id: usize) -> &'static dyn Component {
         let w = TEMPLATE_STORE.weapon_templates.get(id).unwrap();
-        (w as &'static dyn Component)
-    }
-
-    pub fn weapon_iter() -> Enumerate<Iter<'static, Weapon>> {
-        enumiter(&TEMPLATE_STORE.weapon_templates)
+        w as &'static dyn Component
     }
 
     pub fn weapon_count() -> usize {
@@ -90,7 +72,7 @@ fn read_template_file<T: Component + for<'de> Deserialize<'de>>(filename: String
     reader.read_to_string(&mut tmpl_str)?;
     let ron_deserializer = &mut Deserializer::from_str(&tmpl_str)?;
     let mut ron_deserializer = erased_serde::Deserializer::erase(ron_deserializer);
-    let mut templates: Vec<T> = match erased_serde::deserialize(&mut ron_deserializer) {
+    let templates: Vec<T> = match erased_serde::deserialize(&mut ron_deserializer) {
         Ok(f) => f,
         Err(e) => {
             println!("Could not parse RON-file {}:\n  {}", &filename, e);
