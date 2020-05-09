@@ -4,7 +4,7 @@ use crate::{
         Component,
         ComponentType,
     },
-    input,
+    io,
     state_machine::{
         ContextAction,
         ResponseType,
@@ -52,12 +52,12 @@ impl State for SelectComponentTypeState {
                 })
                 .collect(),
         );
-        input::prompt_choices("What type of components are you interested in?", &self.choices.borrow());
+        io::prompt_choices("What type of components are you interested in?", &self.choices.borrow());
         ResponseType::Raw
     }
 
     fn transition(&self, tokens: &Vec<String>, _: &mut World) -> Option<ContextAction> {
-        input::match_choice(&tokens[0], &self.choices.borrow())
+        io::match_choice(&tokens[0], &self.choices.borrow())
     }
 }
 
@@ -109,7 +109,7 @@ impl State for SelectComponentState {
                 .collect(),
         );
 
-        input::prompt_choices(
+        io::prompt_choices(
             &format!("Ok, we have the following {}", self.ctype.to_plural()),
             &self.choices.borrow(),
         );
@@ -118,7 +118,7 @@ impl State for SelectComponentState {
 
     fn transition(&self, tokens: &Vec<String>, _: &mut World) -> Option<ContextAction> {
         if tokens.len() > 1 {
-            match input::match_command_choice("inspect", tokens, &self.available_components.borrow()) {
+            match io::match_command_choice("inspect", tokens, &self.available_components.borrow()) {
                 Some(c) => {
                     println!("\n{}", c.1);
                     Some(ContextAction::Retry)
@@ -126,7 +126,7 @@ impl State for SelectComponentState {
                 _ => None,
             }
         } else {
-            return input::match_choice(&tokens[0], &self.choices.borrow());
+            return io::match_choice(&tokens[0], &self.choices.borrow());
         }
     }
 }
@@ -174,7 +174,7 @@ impl State for SelectLocationState {
                 .collect(),
         );
 
-        input::prompt_choices(
+        io::prompt_choices(
             &format!("Where do you want to install the {}", self.component.name()),
             &self.choices.borrow(),
         );
@@ -182,7 +182,7 @@ impl State for SelectLocationState {
     }
 
     fn transition(&self, tokens: &Vec<String>, world: &mut World) -> Option<ContextAction> {
-        if let Some(location_id) = input::match_choice(&tokens[0], &self.choices.borrow()) {
+        if let Some(location_id) = io::match_choice(&tokens[0], &self.choices.borrow()) {
             let ship = &mut world.ships[self.ship_id];
             match ship.add_component(self.component.clone(), location_id) {
                 Ok(slots_remaining) => {

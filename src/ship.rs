@@ -6,6 +6,10 @@ use crate::{
     },
 };
 use anyhow::Result as AnyResult;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use std::{
     collections::BTreeMap,
     fmt,
@@ -16,7 +20,7 @@ use std::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Ship {
     id: usize,
     pub name: String,

@@ -1,5 +1,5 @@
 use crate::{
-    input,
+    io,
     state_machine::{
         ContextAction,
         ResponseType,
@@ -43,12 +43,12 @@ impl State for SelectComponentState {
                 .collect(),
         );
         println!("We can offer you the best deals in the galaxy on your used parts!");
-        input::prompt_choices("What would you like to sell?", &self.choices.borrow());
+        io::prompt_choices("What would you like to sell?", &self.choices.borrow());
         ResponseType::Tokenized
     }
 
     fn transition(&self, tokens: &Vec<String>, _: &mut World) -> Option<ContextAction> {
-        input::match_choice(&tokens[0], &self.choices.borrow())
+        io::match_choice(&tokens[0], &self.choices.borrow())
     }
 }
 
@@ -81,7 +81,7 @@ impl State for SellComponentState {
 
     fn transition(&self, tokens: &Vec<String>, world: &mut World) -> Option<ContextAction> {
         let ship = &mut world.ships[self.ship_id];
-        if let Some(sell) = input::match_response_yn(&tokens[0]) {
+        if let Some(sell) = io::match_response_yn(&tokens[0]) {
             if sell {
                 let c = ship.remove_component(self.component_id);
                 world.shops[self.shop_id].gain_component(c);

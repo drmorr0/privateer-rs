@@ -7,6 +7,7 @@ use syn;
 fn impl_component_derive(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let gen = quote! {
+        #[typetag::serde]
         impl Component for #name {
             fn as_any(&self) -> &(dyn Any + 'static) { self }
             fn as_any_mut(&mut self) -> &mut (dyn Any + 'static) { self }

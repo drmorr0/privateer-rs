@@ -4,11 +4,17 @@ use crate::{
         ComponentType,
         Hull,
     },
+    io,
     ship::Ship,
     template::TemplateStore,
     util::enumiter,
 };
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
+#[derive(Deserialize, Serialize)]
 pub struct World {
     pub ships: Vec<Ship>,
     pub shops: Vec<Shop>,
@@ -22,6 +28,10 @@ impl<'wld> World {
         };
         w.mk_shop("A Better, Cheaper, Shipsmith".to_string());
         w
+    }
+
+    pub fn load(filename: &str) -> World {
+        io::read_data_file(filename)
     }
 
     pub fn mk_ship(&mut self, name: &str, hull: Hull) -> usize {
@@ -39,6 +49,7 @@ impl<'wld> World {
     }
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct Shop {
     pub name: String,
     pub engine_counts: Vec<u32>,

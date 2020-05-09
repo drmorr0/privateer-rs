@@ -1,5 +1,11 @@
 use crate::util::enumiter;
-use std::fmt;
+use ron::de::from_reader;
+use serde::de::DeserializeOwned;
+use std::{
+    fmt,
+    fs::File,
+    io::BufReader,
+};
 
 pub fn match_response_yn(response: &str) -> Option<bool> {
     match response {
@@ -30,4 +36,10 @@ pub fn match_command_choice<'a, U>(command: &str, tokens: &Vec<String>, choices:
         (c, Ok(i)) if c == command && i <= choices.len() => Some(&choices[i - 1]),
         _ => None,
     }
+}
+
+pub fn read_data_file<T: DeserializeOwned>(filename: &str) -> T {
+    let f = File::open(filename).unwrap();
+    let reader = BufReader::new(f);
+    from_reader(reader).unwrap()
 }

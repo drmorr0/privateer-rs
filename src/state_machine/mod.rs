@@ -1,3 +1,4 @@
+mod commands;
 pub mod ship;
 pub mod ship_builder;
 mod util;
@@ -37,16 +38,30 @@ pub trait State: util::BoxClone {
 #[derive(Clone)]
 pub struct EntryState {}
 
+impl EntryState {
+    pub fn new() -> Box<EntryState> {
+        Box::new(EntryState {})
+    }
+}
+
 impl State for EntryState {
-    fn enter(&self, _: &World) -> ResponseType {
-        println!("Greetings, Captain!  You have come into possession of a new ship!");
-        print!("What would you like to name it? ");
-        io::stdout().flush().unwrap();
-        ResponseType::Raw
+    fn enter(&self, world: &World) -> ResponseType {
+        if world.ships.is_empty() {
+            println!("Greetings, Captain!  You have come into possession of a new ship!");
+            print!("What would you like to name it? ");
+            io::stdout().flush().unwrap();
+            ResponseType::Raw
+        } else {
+            ResponseType::None
+        }
     }
 
     fn transition(&self, input: &Vec<String>, world: &mut World) -> Option<ContextAction> {
-        let ship_id = world.mk_ship(&input[0], TemplateStore::hull(0).unwrap().clone());
+        let ship_id = if world.ships.is_empty() {
+            world.mk_ship(&input[0], TemplateStore::hull(0).unwrap().clone())
+        } else {
+            0
+        };
         Some(ContextAction::Replace(ship_builder::BuilderRootState::new(ship_id, 0)))
     }
 }
@@ -73,11 +88,14 @@ pub struct Context {
     world: Box<World>,
 }
 
-impl<'ctx> Context {
-    pub fn new(starting_state: Box<dyn State>) -> Context {
+impl Context {
+    pub fn new(world: Option<World>, starting_state: Box<dyn State>) -> Context {
         Context {
+            world: Box::new(match world {
+                Some(w) => w,
+                None => World::new(),
+            }),
             stack: vec![starting_state],
-            world: Box::new(World::new()),
         }
     }
 
@@ -107,7 +125,7 @@ impl<'ctx> Context {
                     },
                 };
 
-                if let Some(a) = self.process_global_command(&tokens) {
+                if let Some(a) = self.process_global_command(&tokens, &self.world) {
                     action = a;
                     break;
                 } else if let Some(a) = current_state.transition(&tokens, &mut self.world) {
@@ -134,9 +152,13 @@ impl<'ctx> Context {
         Ok(())
     }
 
-    fn process_global_command(&self, tokens: &Vec<String>) -> Option<ContextAction> {
+    fn process_global_command(&self, tokens: &Vec<String>, world: &World) -> Option<ContextAction> {
         match tokens.get(0) {
             Some(a) if a == "quit" => Some(ContextAction::Clear),
+            Some(a) if a == "save" => {
+                commands::save_state(&tokens[1], world).unwrap();
+                Some(ContextAction::Retry)
+            },
             Some(a) if a == "back" => Some(ContextAction::Bounce),
             _ => None,
         }

@@ -1,13 +1,15 @@
 mod util;
-use serde::Deserialize;
+use component_derive::Component;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use std::{
     any::Any,
     fmt,
 };
 
-use component_derive::Component;
-
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum ComponentType {
     Hull(usize),
     Engine(usize),
@@ -40,6 +42,7 @@ pub fn make_ctype_with_id(ctype: ComponentType, id: usize) -> ComponentType {
     }
 }
 
+#[typetag::serde(tag = "type")]
 pub trait Component: fmt::Debug + fmt::Display + util::BoxClone {
     // We implement the as_any/as_any_mut functions so we can downcast a component to a specific type
     // https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object
@@ -51,7 +54,7 @@ pub trait Component: fmt::Debug + fmt::Display + util::BoxClone {
     fn slots(&self) -> u8;
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ComponentData {
     pub ctype: ComponentType,
     pub name: String,
@@ -59,27 +62,26 @@ pub struct ComponentData {
     pub slots: u8,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum HullClass {
     Light,
     Medium,
     Heavy,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct HullSegment {
     pub name: String,
     pub armor: u32,
     pub slots: u8,
 
-    #[serde(skip)]
+    #[serde(default)]
     pub used_slots: u8,
-
-    #[serde(skip)]
+    #[serde(default)]
     pub component_ids: Vec<usize>,
 }
 
-#[derive(Component, Clone, Debug, Deserialize)]
+#[derive(Component, Clone, Debug, Deserialize, Serialize)]
 pub struct Hull {
     common: ComponentData,
 
@@ -89,12 +91,12 @@ pub struct Hull {
 }
 
 impl fmt::Display for Hull {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
         Ok(())
     }
 }
 
-#[derive(Component, Clone, Debug, Deserialize)]
+#[derive(Component, Clone, Debug, Deserialize, Serialize)]
 pub struct Computer {
     common: ComponentData,
 
@@ -103,12 +105,12 @@ pub struct Computer {
 }
 
 impl fmt::Display for Computer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
         Ok(())
     }
 }
 
-#[derive(Component, Clone, Debug, Deserialize)]
+#[derive(Component, Clone, Debug, Deserialize, Serialize)]
 pub struct Engine {
     common: ComponentData,
 
@@ -124,7 +126,7 @@ impl fmt::Display for Engine {
     }
 }
 
-#[derive(Component, Clone, Debug, Deserialize)]
+#[derive(Component, Clone, Debug, Deserialize, Serialize)]
 pub struct Weapon {
     pub common: ComponentData,
 
@@ -133,7 +135,7 @@ pub struct Weapon {
 }
 
 impl fmt::Display for Weapon {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
         Ok(())
     }
 }

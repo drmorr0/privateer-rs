@@ -1,0 +1,74 @@
+(
+    ships: [
+        (
+            id: 0,
+            name: "asdf",
+            components: {
+                0: {
+                    "type": "Hull",
+                    "common": (
+                        ctype: Hull(0),
+                        name: "Junk Heap, Mk II",
+                        mass: 100,
+                        slots: 0,
+                    ),
+                    "class": Light,
+                    "role": "Transport",
+                    "segment_list": [
+                        (
+                            name: "Fuselage",
+                            armor: 20,
+                            slots: 10,
+                            used_slots: 10,
+                            component_ids: [
+                                1,
+                            ],
+                        ),
+                        (
+                            name: "Port Wing",
+                            armor: 10,
+                            slots: 5,
+                            used_slots: 0,
+                            component_ids: [],
+                        ),
+                        (
+                            name: "Starboard Wing",
+                            armor: 10,
+                            slots: 5,
+                            used_slots: 0,
+                            component_ids: [],
+                        ),
+                        (
+                            name: "Cockpit",
+                            armor: 5,
+                            slots: 1,
+                            used_slots: 0,
+                            component_ids: [],
+                        ),
+                    ],
+                },
+                1: {
+                    "type": "Engine",
+                    "common": (
+                        ctype: Engine(0),
+                        name: "Ion Engine, Mk I",
+                        mass: 20,
+                        slots: 10,
+                    ),
+                    "thrust": 15,
+                },
+            },
+            next_component_id: 1,
+        ),
+    ],
+    shops: [
+        (
+            name: "A Better, Cheaper, Shipsmith",
+            engine_counts: [
+                4,
+                5,
+            ],
+            weapon_counts: [],
+        ),
+    ],
+)

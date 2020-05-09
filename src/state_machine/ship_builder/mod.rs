@@ -1,7 +1,7 @@
 pub mod add_component;
 pub mod remove_component;
 use crate::{
-    input,
+    io,
     state_machine::{
         ship::ExamineShipState,
         ContextAction,
@@ -50,11 +50,11 @@ impl State for BuilderRootState {
             "Welcome to {}, the finest purveyor of goods for your spaceship!",
             world.shops[self.shop_id].name,
         );
-        input::prompt_choices("How can we help you?", &self.choices.borrow());
+        io::prompt_choices("How can we help you?", &self.choices.borrow());
         ResponseType::Tokenized
     }
 
     fn transition(&self, tokens: &Vec<String>, _: &mut World) -> Option<ContextAction> {
-        input::match_choice(&tokens[0], &self.choices.borrow())
+        io::match_choice(&tokens[0], &self.choices.borrow())
     }
 }
