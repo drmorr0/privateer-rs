@@ -1,23 +1,22 @@
-mod commands;
 pub mod ship;
-pub mod ship_builder;
+pub mod shipyard;
 mod util;
-use crate::{
-    template::TemplateStore,
-    world::World,
-};
+use crate::world::World;
 use anyhow::Result as AnyResult;
-use std::io::{
-    self,
-    Write,
+use std::{
+    collections::HashMap,
+    io::{
+        self,
+        Write,
+    },
 };
 
-type StatePointer = Box<dyn State>;
+pub type CommandFunction = fn(&[String], &World) -> Option<ContextAction>;
 
 #[derive(Clone)] // These get cloned during the input::match_choice routine
 pub enum ContextAction {
-    Pushdown(StatePointer),
-    Replace(StatePointer),
+    Pushdown(Box<dyn State>),
+    Replace(Box<dyn State>),
     Bounce,
     Clear,
     Retry,
@@ -32,38 +31,7 @@ pub enum ResponseType {
 
 pub trait State: util::BoxClone {
     fn enter(&self, world: &World) -> ResponseType;
-    fn transition(&self, tokens: &Vec<String>, world: &mut World) -> Option<ContextAction>;
-}
-
-#[derive(Clone)]
-pub struct EntryState {}
-
-impl EntryState {
-    pub fn new() -> Box<EntryState> {
-        Box::new(EntryState {})
-    }
-}
-
-impl State for EntryState {
-    fn enter(&self, world: &World) -> ResponseType {
-        if world.ships.is_empty() {
-            println!("Greetings, Captain!  You have come into possession of a new ship!");
-            print!("What would you like to name it? ");
-            io::stdout().flush().unwrap();
-            ResponseType::Raw
-        } else {
-            ResponseType::None
-        }
-    }
-
-    fn transition(&self, input: &Vec<String>, world: &mut World) -> Option<ContextAction> {
-        let ship_id = if world.ships.is_empty() {
-            world.mk_ship(&input[0], TemplateStore::hull(0).unwrap().clone())
-        } else {
-            0
-        };
-        Some(ContextAction::Replace(ship_builder::BuilderRootState::new(ship_id, 0)))
-    }
+    fn transition(&self, tokens: &[String], world: &mut World) -> Option<ContextAction>;
 }
 
 #[derive(Clone)]
@@ -78,7 +46,7 @@ impl State for ExitState {
         ResponseType::None
     }
 
-    fn transition(&self, _: &Vec<String>, _: &mut World) -> Option<ContextAction> {
+    fn transition(&self, _: &[String], _: &mut World) -> Option<ContextAction> {
         Some(ContextAction::Clear)
     }
 }
@@ -86,16 +54,15 @@ impl State for ExitState {
 pub struct Context {
     stack: Vec<Box<dyn State>>,
     world: Box<World>,
+    commands: HashMap<String, CommandFunction>,
 }
 
 impl Context {
-    pub fn new(world: Option<World>, starting_state: Box<dyn State>) -> Context {
+    pub fn new(world: World, starting_state: Box<dyn State>, commands: HashMap<String, CommandFunction>) -> Context {
         Context {
-            world: Box::new(match world {
-                Some(w) => w,
-                None => World::new(),
-            }),
             stack: vec![starting_state],
+            world: Box::new(world),
+            commands,
         }
     }
 
@@ -154,11 +121,8 @@ impl Context {
 
     fn process_global_command(&self, tokens: &Vec<String>, world: &World) -> Option<ContextAction> {
         match tokens.get(0) {
+            Some(a) if self.commands.contains_key(a) => self.commands[a](&tokens[1..], world),
             Some(a) if a == "quit" => Some(ContextAction::Clear),
-            Some(a) if a == "save" => {
-                commands::save_state(&tokens[1], world).unwrap();
-                Some(ContextAction::Retry)
-            },
             Some(a) if a == "back" => Some(ContextAction::Bounce),
             _ => None,
         }

@@ -4,8 +4,17 @@ use serde::de::DeserializeOwned;
 use std::{
     fmt,
     fs::File,
-    io::BufReader,
+    io,
+    io::Write,
 };
+
+pub fn prompt(prompt: &str) -> String {
+    print!("{} ", prompt);
+    io::stdout().flush().unwrap();
+    let mut response = String::new();
+    io::stdin().read_line(&mut response).unwrap();
+    response.trim().to_string()
+}
 
 pub fn match_response_yn(response: &str) -> Option<bool> {
     match response {
@@ -31,7 +40,7 @@ pub fn match_choice<T, U: Clone>(response: &str, choices: &Vec<(T, U)>) -> Optio
     }
 }
 
-pub fn match_command_choice<'a, U>(command: &str, tokens: &Vec<String>, choices: &'a Vec<U>) -> Option<&'a U> {
+pub fn match_command_choice<'a, U>(command: &str, tokens: &[String], choices: &'a Vec<U>) -> Option<&'a U> {
     match (tokens[0].as_str(), tokens[1].parse::<usize>()) {
         (c, Ok(i)) if c == command && i <= choices.len() => Some(&choices[i - 1]),
         _ => None,
@@ -40,6 +49,6 @@ pub fn match_command_choice<'a, U>(command: &str, tokens: &Vec<String>, choices:
 
 pub fn read_data_file<T: DeserializeOwned>(filename: &str) -> T {
     let f = File::open(filename).unwrap();
-    let reader = BufReader::new(f);
+    let reader = io::BufReader::new(f);
     from_reader(reader).unwrap()
 }

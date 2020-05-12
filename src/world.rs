@@ -22,12 +22,10 @@ pub struct World {
 
 impl<'wld> World {
     pub fn new() -> World {
-        let mut w = World {
+        World {
             ships: vec![],
             shops: vec![],
-        };
-        w.mk_shop("A Better, Cheaper, Shipsmith".to_string());
-        w
+        }
     }
 
     pub fn load(filename: &str) -> World {
@@ -40,11 +38,11 @@ impl<'wld> World {
         id
     }
 
-    fn mk_shop(&mut self, name: String) {
+    pub fn mk_shop(&mut self, name: &str) {
         self.shops.push(Shop {
-            name,
-            engine_counts: vec![5; TemplateStore::engine_count()],
-            weapon_counts: vec![5; TemplateStore::weapon_count()],
+            name: name.to_string(),
+            engine_counts: vec![100; TemplateStore::engine_count()],
+            weapon_counts: vec![100; TemplateStore::weapon_count()],
         });
     }
 }

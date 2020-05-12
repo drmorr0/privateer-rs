@@ -1,16 +1,16 @@
 {
 	"folders": [
 		{
-			"path": "C:\\Users\\drmorr\\Home\\programs\\privateer-rs"
+			"path": "E:\\programs\\privateer-rs"
 		}
 	],
 	"settings": {
 		"workbench.colorCustomizations": {
 			"editorCursor.foreground": "#8ee2c5"
-		}
+		},
 		"editor.tokenColorCustomizations": {
 			"numbers": "#FF9d00",
 			"types": "#ffda9e"
 		}
 	}
-}:w
+}

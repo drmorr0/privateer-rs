@@ -18,7 +18,7 @@ impl State for ExamineShipState {
         ResponseType::None
     }
 
-    fn transition(&self, _: &Vec<String>, _: &mut World) -> Option<ContextAction> {
+    fn transition(&self, _: &[String], _: &mut World) -> Option<ContextAction> {
         Some(ContextAction::Bounce)
     }
 }
